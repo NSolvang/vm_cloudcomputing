@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Hosting;
 using DailyProduction.Models;
 using System.IO;
+using System.Collections.Generic;
 
 namespace IbasAPI.Controllers
 {
@@ -27,21 +28,21 @@ namespace IbasAPI.Controllers
 
             string filePath;
 
-            // Prioriter AzurePath, hvis den findes
-            if (File.Exists(azurePath))
+            // Brug AzurePath først, hvis den findes
+            if (System.IO.File.Exists(azurePath))
             {
                 filePath = azurePath;
                 _logger.LogInformation("Bruger Azure CSV fil: {FilePath}", filePath);
             }
             // Ellers prøv LocalPath (til udvikling)
-            else if (File.Exists(Path.Combine(env.ContentRootPath, localPath)))
+            else if (System.IO.File.Exists(Path.Combine(env.ContentRootPath, localPath)))
             {
                 filePath = Path.Combine(env.ContentRootPath, localPath);
                 _logger.LogInformation("Bruger lokal CSV fil: {FilePath}", filePath);
             }
             else
             {
-                // Hvis ingen af dem findes, giv en klar fejl
+                // Hvis ingen af filerne findes, smid en klar fejl
                 var msg = $"Ingen CSV-fil fundet. Tjek LocalPath og AzurePath.";
                 _logger.LogError(msg);
                 throw new FileNotFoundException(msg);
