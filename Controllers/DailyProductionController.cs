@@ -28,21 +28,21 @@ namespace IbasAPI.Controllers
 
             string filePath;
 
-            // Brug AzurePath først, hvis den findes
+            // 1️⃣ Tjek først om filen findes på AzurePath (VM)
             if (System.IO.File.Exists(azurePath))
             {
                 filePath = azurePath;
                 _logger.LogInformation("Bruger Azure CSV fil: {FilePath}", filePath);
             }
-            // Ellers prøv LocalPath (til udvikling)
+            // 2️⃣ Ellers prøv LocalPath (til udvikling)
             else if (System.IO.File.Exists(Path.Combine(env.ContentRootPath, localPath)))
             {
                 filePath = Path.Combine(env.ContentRootPath, localPath);
                 _logger.LogInformation("Bruger lokal CSV fil: {FilePath}", filePath);
             }
+            // 3️⃣ Hvis ingen af filerne findes, smid klar fejl
             else
             {
-                // Hvis ingen af filerne findes, smid en klar fejl
                 var msg = $"Ingen CSV-fil fundet. Tjek LocalPath og AzurePath.";
                 _logger.LogError(msg);
                 throw new FileNotFoundException(msg);
