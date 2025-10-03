@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Hosting;
 using DailyProduction.Models;
+using System.IO;
 
 namespace IbasAPI.Controllers
 {
@@ -14,9 +15,9 @@ namespace IbasAPI.Controllers
         private readonly ILogger<DailyProductionController> _logger;
 
         public DailyProductionController(
-            ILogger<DailyProductionController> logger, 
+            ILogger<DailyProductionController> logger,
             IConfiguration configuration,
-            IWebHostEnvironment env)  // til at tjekke hvor vi kører
+            IWebHostEnvironment env)
         {
             _logger = logger;
 
@@ -24,20 +25,27 @@ namespace IbasAPI.Controllers
             var localPath = configuration["CsvSettings:LocalPath"];
             var azurePath = configuration["CsvSettings:AzurePath"];
 
-            // Bestem automatisk hvilken sti der skal bruges
             string filePath;
-            if (env.IsDevelopment() || System.IO.File.Exists(Path.Combine(env.ContentRootPath, localPath)))
+
+            // Prioriter AzurePath, hvis den findes
+            if (File.Exists(azurePath))
             {
-                // Brug lokal fil
+                filePath = azurePath;
+                _logger.LogInformation("Bruger Azure CSV fil: {FilePath}", filePath);
+            }
+            // Ellers prøv LocalPath (til udvikling)
+            else if (File.Exists(Path.Combine(env.ContentRootPath, localPath)))
+            {
                 filePath = Path.Combine(env.ContentRootPath, localPath);
+                _logger.LogInformation("Bruger lokal CSV fil: {FilePath}", filePath);
             }
             else
             {
-                // Brug Azure File Share sti
-                filePath = azurePath;
+                // Hvis ingen af dem findes, giv en klar fejl
+                var msg = $"Ingen CSV-fil fundet. Tjek LocalPath og AzurePath.";
+                _logger.LogError(msg);
+                throw new FileNotFoundException(msg);
             }
-
-            _logger.LogInformation("Bruger CSV fil: {FilePath}", filePath);
 
             // Indlæs CSV
             _productionRepo = CsvLoader.LoadDailyProduction(filePath);
